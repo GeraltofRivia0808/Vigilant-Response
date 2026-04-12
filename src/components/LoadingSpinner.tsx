@@ -1,11 +1,11 @@
 export default function LoadingSpinner() {
   return (
-    <div className="flex items-center justify-center py-12">
-      <div className="relative">
-        <div className="h-10 w-10 rounded-full border-2 border-muted" />
-        <div className="absolute inset-0 h-10 w-10 rounded-full border-2 border-transparent border-t-primary animate-spin" />
+    <div className="flex items-center justify-center py-8">
+      <div className="relative h-6 w-6">
+        <div className="absolute inset-0 rounded-full border border-border" />
+        <div className="absolute inset-0 rounded-full border border-transparent border-t-primary animate-spin" />
       </div>
-      <span className="ml-3 text-sm text-muted-foreground">Loading data...</span>
+      <span className="ml-2 text-xs text-muted-foreground mono">LOADING DATA...</span>
     </div>
   );
 }

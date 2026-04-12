@@ -59,6 +59,10 @@ export default {
           DEFAULT: "hsl(var(--critical))",
           foreground: "hsl(var(--critical-foreground))",
         },
+        panel: {
+          DEFAULT: "hsl(var(--panel))",
+          border: "hsl(var(--panel-border))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",

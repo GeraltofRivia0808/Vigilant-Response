@@ -17,43 +17,55 @@ export default function AlertsPage() {
   }, []);
 
   useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => {
+    const i = setInterval(() => fetchAlerts().then(setAlerts), 5000);
+    return () => clearInterval(i);
+  }, []);
 
   const filtered = alerts.filter(
-    (a) => a.message.toLowerCase().includes(search.toLowerCase()) || a.region.toLowerCase().includes(search.toLowerCase())
+    (a) => a.message.toLowerCase().includes(search.toLowerCase()) || a.region.toLowerCase().includes(search.toLowerCase()) || a.status.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Alerts</h1>
-          <p className="text-sm text-muted-foreground">{alerts.length} total alert records</p>
+    <div className="space-y-2">
+      <div className="eoc-panel">
+        <div className="eoc-panel-header">
+          <span>Alert Records — {alerts.length} total</span>
+          <div className="flex items-center gap-2">
+            <SearchFilter value={search} onChange={setSearch} placeholder="Filter alerts..." />
+            <button onClick={loadData} className="flex items-center gap-1 rounded px-2 py-1 text-[10px] font-semibold uppercase text-primary hover:bg-primary/10 transition-colors">
+              <RefreshCw className="h-3 w-3" /> Reload
+            </button>
+          </div>
         </div>
-        <div className="flex items-center gap-3">
-          <SearchFilter value={search} onChange={setSearch} placeholder="Search alerts..." />
-          <button onClick={loadData} className="flex items-center gap-2 rounded-lg bg-primary/10 px-4 py-2 text-sm font-medium text-primary hover:bg-primary/20 transition-colors">
-            <RefreshCw className="h-4 w-4" /> Load Alerts
-          </button>
-        </div>
-      </div>
 
-      {loading ? <LoadingSpinner /> : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((a, i) => (
-            <div key={a.id + i} className="glass-card-hover p-5 space-y-3 animate-slide-up" style={{ animationDelay: `${i * 50}ms` }}>
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-mono text-muted-foreground">{a.id}</span>
-                <AlertStatusBadge status={a.status} />
-              </div>
-              <p className="text-sm text-foreground/90 leading-relaxed">{a.message}</p>
-              <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span>{a.region}</span>
-                <span>{a.time}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+        {loading ? <LoadingSpinner /> : (
+          <div className="overflow-auto">
+            <table className="eoc-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Region</th>
+                  <th>Message</th>
+                  <th>Status</th>
+                  <th>Time</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((a, i) => (
+                  <tr key={a.id + i}>
+                    <td className="mono text-muted-foreground">{a.id}</td>
+                    <td className="font-medium">{a.region}</td>
+                    <td className="text-foreground/80 max-w-xs truncate">{a.message}</td>
+                    <td><AlertStatusBadge status={a.status} /></td>
+                    <td className="mono text-muted-foreground text-[10px]">{a.time}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

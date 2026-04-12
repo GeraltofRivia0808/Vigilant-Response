@@ -1,28 +1,28 @@
 import type { Severity, AlertStatus, VolunteerStatus } from "@/lib/mock-data";
 
 const severityStyles: Record<Severity, string> = {
-  LOW: "bg-success/10 text-success border-success/20",
-  MEDIUM: "bg-warning/10 text-warning border-warning/20",
-  HIGH: "bg-accent/10 text-accent border-accent/20",
-  CRITICAL: "bg-destructive/10 text-destructive border-destructive/20 animate-pulse-glow",
+  LOW: "text-success bg-success/10",
+  MEDIUM: "text-warning bg-warning/10",
+  HIGH: "text-accent bg-accent/10",
+  CRITICAL: "text-destructive bg-destructive/10 animate-pulse",
 };
 
 const alertStyles: Record<AlertStatus, string> = {
-  PENDING: "bg-warning/10 text-warning border-warning/20",
-  SENT: "bg-accent/10 text-accent border-accent/20",
-  DELIVERED: "bg-success/10 text-success border-success/20",
-  FAILED: "bg-destructive/10 text-destructive border-destructive/20",
+  PENDING: "text-warning bg-warning/10",
+  SENT: "text-accent bg-accent/10",
+  DELIVERED: "text-success bg-success/10",
+  FAILED: "text-destructive bg-destructive/10",
 };
 
 const volunteerStyles: Record<VolunteerStatus, string> = {
-  Available: "bg-success/10 text-success border-success/20",
-  Assigned: "bg-accent/10 text-accent border-accent/20",
-  Unavailable: "bg-destructive/10 text-destructive border-destructive/20",
+  Available: "text-success bg-success/10",
+  Assigned: "text-accent bg-accent/10",
+  Unavailable: "text-destructive bg-destructive/10",
 };
 
 export function SeverityBadge({ severity }: { severity: Severity }) {
   return (
-    <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${severityStyles[severity]}`}>
+    <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${severityStyles[severity]}`}>
       {severity}
     </span>
   );
@@ -30,7 +30,7 @@ export function SeverityBadge({ severity }: { severity: Severity }) {
 
 export function AlertStatusBadge({ status }: { status: AlertStatus }) {
   return (
-    <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${alertStyles[status]}`}>
+    <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${alertStyles[status]}`}>
       {status}
     </span>
   );
@@ -38,7 +38,7 @@ export function AlertStatusBadge({ status }: { status: AlertStatus }) {
 
 export function VolunteerStatusBadge({ status }: { status: VolunteerStatus }) {
   return (
-    <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${volunteerStyles[status]}`}>
+    <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${volunteerStyles[status]}`}>
       {status}
     </span>
   );
