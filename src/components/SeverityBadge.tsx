@@ -1,4 +1,4 @@
-import type { Severity, AlertStatus, VolunteerStatus } from "@/lib/mock-data";
+import type { Severity, AlertStatus, VolunteerStatus } from "@/lib/types";
 
 const severityStyles: Record<Severity, string> = {
   LOW: "text-success bg-success/10",

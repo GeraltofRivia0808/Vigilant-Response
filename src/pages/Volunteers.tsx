@@ -1,64 +1,117 @@
 import { useEffect, useState, useCallback } from "react";
 import { RefreshCw } from "lucide-react";
-import { VolunteerStatusBadge } from "@/components/SeverityBadge";
 import LoadingSpinner from "@/components/LoadingSpinner";
-import SearchFilter from "@/components/SearchFilter";
-import { fetchVolunteers, type Volunteer } from "@/lib/mock-data";
+import { fetchVolunteers, updateVolunteerStatus } from "@/lib/api";
+import type { Volunteer } from "@/lib/types";
+import { toast } from "sonner";
 
 export default function VolunteersPage() {
   const [volunteers, setVolunteers] = useState<Volunteer[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [activeVolunteerId, setActiveVolunteerId] = useState<string | number | null>(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
-    setVolunteers(await fetchVolunteers());
-    setLoading(false);
+    setError(null);
+
+    try {
+      setVolunteers(await fetchVolunteers());
+    } catch (fetchError) {
+      console.error(fetchError);
+      setError(fetchError instanceof Error ? fetchError.message : "Failed to load volunteers.");
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => { loadData(); }, [loadData]);
   useEffect(() => {
-    const i = setInterval(() => fetchVolunteers().then(setVolunteers), 5000);
+    const i = setInterval(async () => {
+      try {
+        setVolunteers(await fetchVolunteers());
+      } catch (fetchError) {
+        console.error(fetchError);
+        setError(fetchError instanceof Error ? fetchError.message : "Failed to refresh volunteers.");
+      }
+    }, 5000);
     return () => clearInterval(i);
   }, []);
 
-  const filtered = volunteers.filter(
-    (v) => v.name.toLowerCase().includes(search.toLowerCase()) || v.region.toLowerCase().includes(search.toLowerCase()) || v.status.toLowerCase().includes(search.toLowerCase())
-  );
+  const handleStatusChange = async (volunteer: Volunteer, nextStatus: Volunteer["availability_status"]) => {
+    if (nextStatus === volunteer.availability_status) {
+      return;
+    }
+
+    try {
+      setActiveVolunteerId(volunteer.id);
+      const response = await updateVolunteerStatus({
+        volunteer_id: Number(volunteer.id),
+        availability_status: nextStatus,
+      });
+
+      toast.success(response.message);
+      await loadData();
+    } catch (updateError) {
+      toast.error(updateError instanceof Error ? updateError.message : "Volunteer status update failed.");
+    } finally {
+      setActiveVolunteerId(null);
+    }
+  };
 
   return (
     <div className="space-y-2">
+      <p className="text-xs text-muted-foreground">Total Volunteers: {volunteers.length}</p>
+
       <div className="eoc-panel">
         <div className="eoc-panel-header">
-          <span>Volunteer Roster — {volunteers.filter(v => v.status === "Available").length} available</span>
+          <span>Volunteer Roster — {volunteers.length} total</span>
           <div className="flex items-center gap-2">
-            <SearchFilter value={search} onChange={setSearch} placeholder="Filter volunteers..." />
             <button onClick={loadData} className="flex items-center gap-1 rounded px-2 py-1 text-[10px] font-semibold uppercase text-primary hover:bg-primary/10 transition-colors">
               <RefreshCw className="h-3 w-3" /> Reload
             </button>
           </div>
         </div>
 
-        {loading ? <LoadingSpinner /> : (
+        {loading ? <LoadingSpinner /> : error ? (
+          <div className="border-t border-border p-4 text-sm text-destructive">{error}</div>
+        ) : (
           <div className="overflow-auto">
             <table className="eoc-table">
               <thead>
                 <tr>
-                  <th>Name</th>
-                  <th>Region</th>
-                  <th>Skills</th>
-                  <th>Status</th>
+                  <th>name</th>
+                  <th>email</th>
+                  <th>skills</th>
+                  <th>availability_status</th>
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((v, i) => (
-                  <tr key={v.id + i}>
-                    <td className="font-medium">{v.name}</td>
-                    <td className="text-muted-foreground">{v.region}</td>
-                    <td className="text-muted-foreground">{v.skills}</td>
-                    <td><VolunteerStatusBadge status={v.status} /></td>
+                {volunteers.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="text-center text-muted-foreground py-4">No data available</td>
                   </tr>
-                ))}
+                ) : (
+                  volunteers.map((v, i) => (
+                    <tr key={`${v.id}-${i}`}>
+                      <td className="font-medium">{v.name}</td>
+                      <td className="text-muted-foreground">{v.email || "N/A"}</td>
+                      <td className="text-foreground/85">{v.skills || "N/A"}</td>
+                      <td>
+                        <select
+                          value={v.availability_status}
+                          onChange={(event) => handleStatusChange(v, event.target.value as Volunteer["availability_status"])}
+                          disabled={activeVolunteerId === v.id}
+                          className="h-7 rounded border border-input bg-background px-2 text-xs text-foreground disabled:opacity-50"
+                        >
+                          <option value="Available">Available</option>
+                          <option value="Assigned">Assigned</option>
+                          <option value="Unavailable">Unavailable</option>
+                        </select>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>

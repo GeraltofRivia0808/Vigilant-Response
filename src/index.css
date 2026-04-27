@@ -1,8 +1,8 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 @layer base {
   :root {
@@ -66,18 +66,34 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: 'Space Grotesk', system-ui, sans-serif;
     font-size: 13px;
+    background:
+      radial-gradient(circle at 12% 12%, hsl(0 72% 50% / 0.2), transparent 36%),
+      radial-gradient(circle at 86% 18%, hsl(30 90% 52% / 0.16), transparent 30%),
+      linear-gradient(170deg, hsl(222 30% 6%) 0%, hsl(226 26% 4%) 55%, hsl(222 24% 6%) 100%);
+    min-height: 100vh;
+  }
+
+  #root {
+    min-height: 100vh;
   }
 }
 
 @layer components {
+  .app-shell {
+    background:
+      linear-gradient(135deg, hsl(222 24% 7% / 0.85), hsl(224 20% 6% / 0.96));
+  }
+
   .eoc-panel {
-    @apply rounded border border-border bg-card;
+    @apply rounded border border-border bg-card/75;
+    box-shadow: 0 10px 30px hsl(222 40% 2% / 0.35), inset 0 1px 0 hsl(0 0% 100% / 0.02);
+    backdrop-filter: blur(10px);
   }
 
   .eoc-panel-header {
-    @apply flex items-center justify-between border-b border-border px-3 py-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground;
+    @apply flex items-center justify-between border-b border-border px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground;
   }
 
   .eoc-table {
@@ -101,7 +117,8 @@
   }
 
   .stat-card {
-    @apply rounded border border-border bg-card px-3 py-3 transition-colors;
+    @apply rounded border border-border bg-card/70 px-3 py-3 transition-colors;
+    box-shadow: inset 0 0 0 1px hsl(0 0% 100% / 0.02);
   }
 
   .severity-low { @apply text-success; }

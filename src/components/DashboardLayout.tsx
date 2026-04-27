@@ -1,6 +1,7 @@
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { Activity, AlertTriangle, LayoutDashboard, Package, Users, Menu, X } from "lucide-react";
 import { useState, useEffect } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 
 const navItems = [
   { to: "/", icon: LayoutDashboard, label: "DASHBOARD" },
@@ -27,16 +28,63 @@ function LiveClock() {
 
 export default function DashboardLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [showIntro, setShowIntro] = useState(true);
+  const location = useLocation();
+
+  useEffect(() => {
+    const timeout = setTimeout(() => setShowIntro(false), 1550);
+    return () => clearTimeout(timeout);
+  }, []);
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="app-shell flex min-h-screen flex-col bg-background">
+      <AnimatePresence>
+        {showIntro ? (
+          <motion.div
+            key="drcc-intro"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 backdrop-blur-sm"
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0, scale: 1.02 }}
+            transition={{ duration: 0.45 }}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, ease: "easeOut" }}
+              className="text-center"
+            >
+              <motion.p
+                className="text-6xl font-black tracking-[0.4em] text-primary sm:text-7xl"
+                animate={{ textShadow: ["0 0 0px hsl(0 72% 50%)", "0 0 22px hsl(0 72% 50% / 0.8)", "0 0 0px hsl(0 72% 50%)"] }}
+                transition={{ duration: 1.2, repeat: Infinity }}
+              >
+                DRCC
+              </motion.p>
+              <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.35em] text-muted-foreground">
+                Disaster Response Control Center
+              </p>
+            </motion.div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+
       {/* Top Bar */}
-      <header className="border-b border-border bg-card">
+      <motion.header
+        className="border-b border-border bg-card/80 backdrop-blur"
+        initial={{ y: -12, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.45, delay: 0.1 }}
+      >
         <div className="flex h-11 items-center justify-between px-4">
           <div className="flex items-center gap-3">
-            <Activity className="h-4 w-4 text-primary" />
+            <motion.div
+              animate={{ rotate: [0, -8, 8, 0] }}
+              transition={{ duration: 1.8, repeat: Infinity, repeatDelay: 4 }}
+            >
+              <Activity className="h-4 w-4 text-primary" />
+            </motion.div>
             <span className="text-xs font-bold uppercase tracking-widest text-foreground">
-              Disaster Response Control Center
+              DRCC <span className="ml-1 text-muted-foreground">Disaster Response Control Center</span>
             </span>
           </div>
 
@@ -100,11 +148,21 @@ export default function DashboardLayout() {
             ))}
           </nav>
         )}
-      </header>
+      </motion.header>
 
       {/* Content */}
       <main className="flex-1 p-2 sm:p-3">
-        <Outlet />
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={location.pathname}
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.28, ease: "easeOut" }}
+          >
+            <Outlet />
+          </motion.div>
+        </AnimatePresence>
       </main>
     </div>
   );

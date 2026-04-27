@@ -1,11 +1,12 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { AlertTriangle, CloudLightning, Package, Users, RefreshCw, Zap } from "lucide-react";
 import { toast } from "sonner";
-import { SeverityBadge, AlertStatusBadge } from "@/components/SeverityBadge";
+import { AlertStatusBadge, SeverityBadge } from "@/components/SeverityBadge";
 import LoadingSpinner from "@/components/LoadingSpinner";
-import SearchFilter from "@/components/SearchFilter";
 import AnalyticsPanel from "@/components/AnalyticsPanel";
-import { fetchDisasters, fetchAlerts, fetchResources, fetchVolunteers, type Disaster, type Alert, type Resource, type Volunteer } from "@/lib/mock-data";
+import IndiaMap from "@/components/IndiaMap";
+import { fetchDisasters, fetchAlerts, fetchResources, fetchVolunteers } from "@/lib/api";
+import type { Alert, Disaster, Resource, Volunteer } from "@/lib/types";
 
 function StatCard({ label, value, icon: Icon, color }: { label: string; value: number; icon: React.ElementType; color: string }) {
   const colorMap: Record<string, string> = {
@@ -25,56 +26,83 @@ function StatCard({ label, value, icon: Icon, color }: { label: string; value: n
   );
 }
 
+const getMagnitudeDisplay = (disaster: Disaster): string => {
+  if (!disaster.type.toLowerCase().includes("earthquake")) {
+    return "-";
+  }
+
+  return Number.isFinite(disaster.magnitude) && disaster.magnitude > 0
+    ? `Magnitude ${disaster.magnitude}`
+    : "Magnitude N/A";
+};
+
 export default function Dashboard() {
   const [disasters, setDisasters] = useState<Disaster[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [resources, setResources] = useState<Resource[]>([]);
   const [volunteers, setVolunteers] = useState<Volunteer[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const [newIds, setNewIds] = useState<Set<string>>(new Set());
   const prevIdsRef = useRef<Set<string>>(new Set());
 
-  const loadData = useCallback(async (showToast = false) => {
-    const [d, a, r, v] = await Promise.all([fetchDisasters(), fetchAlerts(), fetchResources(), fetchVolunteers()]);
-
-    // Detect new disasters
-    const currentIds = new Set(d.map(x => x.id));
-    const fresh = new Set<string>();
-    if (prevIdsRef.current.size > 0) {
-      d.forEach(x => {
-        if (!prevIdsRef.current.has(x.id)) fresh.add(x.id);
-      });
-      if (fresh.size > 0 && showToast) {
-        toast.error(`⚠ ${fresh.size} new disaster event(s) detected`, { duration: 3000 });
-      }
+  const loadData = useCallback(async (showToast = false, showLoading = true) => {
+    if (showLoading) {
+      setLoading(true);
     }
-    prevIdsRef.current = currentIds;
-    setNewIds(fresh);
-    setTimeout(() => setNewIds(new Set()), 1500);
+    setError(null);
 
-    setDisasters(d);
-    setAlerts(a);
-    setResources(r);
-    setVolunteers(v);
-    setLoading(false);
+    try {
+      const [d, a, r, v] = await Promise.all([fetchDisasters(), fetchAlerts(), fetchResources(), fetchVolunteers()]);
+
+      // Detect new disasters
+      const currentIds = new Set(d.map((x) => String(x.event_id)));
+      const fresh = new Set<string>();
+      if (prevIdsRef.current.size > 0) {
+        d.forEach((x) => {
+          const eventId = String(x.event_id);
+          if (!prevIdsRef.current.has(eventId)) fresh.add(eventId);
+        });
+        if (fresh.size > 0 && showToast) {
+          toast.error(`⚠ ${fresh.size} new disaster event(s) detected`, { duration: 3000 });
+        }
+      }
+
+      prevIdsRef.current = currentIds;
+      setNewIds(fresh);
+      setTimeout(() => setNewIds(new Set()), 1500);
+
+      setDisasters(d);
+      setAlerts(a);
+      setResources(r);
+      setVolunteers(v);
+    } catch (fetchError) {
+      console.error(fetchError);
+      setError(fetchError instanceof Error ? fetchError.message : "Failed to load dashboard data.");
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => { loadData(); }, [loadData]);
 
   // Auto-refresh every 5s
   useEffect(() => {
-    const interval = setInterval(() => loadData(true), 5000);
+    const interval = setInterval(() => loadData(true, false), 5000);
     return () => clearInterval(interval);
   }, [loadData]);
 
-  const filteredDisasters = disasters.filter(
-    (d) => d.type.toLowerCase().includes(search.toLowerCase()) || d.severity.toLowerCase().includes(search.toLowerCase()) || d.id.toLowerCase().includes(search.toLowerCase())
-  );
-
-  const availableVolunteers = volunteers.filter(v => v.status === "Available").length;
+  const pendingAlerts = alerts.reduce((count, alert) => count + (alert.status === "PENDING" ? 1 : 0), 0);
 
   if (loading) return <LoadingSpinner />;
+
+  if (error) {
+    return (
+      <div className="eoc-panel border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
+        {error}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-2">
@@ -84,9 +112,9 @@ export default function Dashboard() {
         {/* LEFT: Quick Stats */}
         <div className="flex flex-row gap-2 lg:flex-col">
           <StatCard label="Disasters" value={disasters.length} icon={CloudLightning} color="red" />
-          <StatCard label="Crit. Alerts" value={alerts.filter(a => a.status === "PENDING").length} icon={AlertTriangle} color="orange" />
-          <StatCard label="Resources" value={resources.reduce((s, r) => s + r.quantity, 0)} icon={Package} color="yellow" />
-          <StatCard label="Volunteers" value={availableVolunteers} icon={Users} color="green" />
+          <StatCard label="Crit. Alerts" value={pendingAlerts} icon={AlertTriangle} color="orange" />
+          <StatCard label="Resources" value={resources.length} icon={Package} color="yellow" />
+          <StatCard label="Volunteers" value={volunteers.length} icon={Users} color="green" />
         </div>
 
         {/* CENTER: Disaster Feed */}
@@ -97,8 +125,7 @@ export default function Dashboard() {
               <span>Live Disaster Feed</span>
             </div>
             <div className="flex items-center gap-2">
-              <SearchFilter value={search} onChange={setSearch} placeholder="Filter events..." />
-              <button onClick={() => loadData()} className="flex items-center gap-1 rounded px-2 py-1 text-[10px] font-semibold uppercase text-primary hover:bg-primary/10 transition-colors">
+              <button onClick={() => loadData(false, true)} className="flex items-center gap-1 rounded px-2 py-1 text-[10px] font-semibold uppercase text-primary hover:bg-primary/10 transition-colors">
                 <RefreshCw className="h-3 w-3" />
               </button>
             </div>
@@ -109,21 +136,27 @@ export default function Dashboard() {
                 <tr>
                   <th>Event ID</th>
                   <th>Type</th>
-                  <th>Mag</th>
                   <th>Severity</th>
+                  <th>Magnitude</th>
                   <th>Time</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredDisasters.map((d) => (
-                  <tr key={d.id} className={newIds.has(d.id) ? "flash-new" : ""}>
-                    <td className="mono text-muted-foreground">{d.id}</td>
-                    <td className="font-medium">{d.type}</td>
-                    <td className="mono font-semibold">{d.magnitude}</td>
-                    <td><SeverityBadge severity={d.severity} /></td>
-                    <td className="text-muted-foreground mono text-[10px]">{d.time}</td>
+                {disasters.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="text-center text-muted-foreground py-4">No data available</td>
                   </tr>
-                ))}
+                ) : (
+                  disasters.map((d) => (
+                    <tr key={d.event_id} className={newIds.has(String(d.event_id)) ? "flash-new" : ""}>
+                      <td className="mono text-muted-foreground">{d.event_id}</td>
+                      <td className="font-medium">{d.type}</td>
+                      <td><SeverityBadge severity={d.severity_level} /></td>
+                      <td className="text-foreground/80">{getMagnitudeDisplay(d)}</td>
+                      <td className="text-muted-foreground mono text-[10px]">{d.event_time}</td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -139,25 +172,42 @@ export default function Dashboard() {
             <span className="text-[10px] text-muted-foreground">{alerts.length} total</span>
           </div>
           <div className="flex-1 overflow-auto p-2 space-y-1.5 max-h-[400px]">
-            {alerts.map((a, i) => (
-              <div key={a.id + i} className="rounded border border-border bg-secondary/30 p-2.5 space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <span className="mono text-[10px] text-muted-foreground">{a.id}</span>
-                  <AlertStatusBadge status={a.status} />
+            {alerts.length === 0 ? (
+              <div className="text-center text-muted-foreground py-8">No data available</div>
+            ) : (
+              alerts.map((a, i) => (
+                  <div key={`${a.alert_id}-${i}`} className="rounded border border-border bg-secondary/30 p-2.5 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                      <span className="mono text-[10px] text-muted-foreground">{a.alert_id}</span>
+                    <AlertStatusBadge status={a.status} />
+                  </div>
+                  <p className="text-[11px] text-foreground/80 leading-relaxed">{a.alert_message}</p>
+                  <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                    <span>{a.disaster_type} · {a.region_name}</span>
+                    <span className="mono">{a.alert_time}</span>
+                  </div>
                 </div>
-                <p className="text-[11px] text-foreground/80 leading-relaxed">{a.message}</p>
-                <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-                  <span>{a.region}</span>
-                  <span className="mono">{a.time.split(" ")[1]}</span>
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </div>
 
       {/* BOTTOM: Analytics */}
       <AnalyticsPanel disasters={disasters} resources={resources} volunteers={volunteers} />
+
+      {/* MAP: Region hover insights */}
+      <IndiaMap disasters={disasters} resources={resources} volunteers={volunteers} />
+
+      <details className="eoc-panel p-3 text-xs">
+        <summary className="cursor-pointer select-none text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+          Debug view
+        </summary>
+        <p className="mt-3 text-[11px] text-muted-foreground">Total Disasters: {disasters.length}</p>
+        <pre className="mt-3 max-h-80 overflow-auto rounded border border-border bg-background p-3 text-[11px] leading-relaxed text-muted-foreground">
+{JSON.stringify(disasters, null, 2)}
+        </pre>
+      </details>
     </div>
   );
 }
