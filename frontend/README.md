@@ -1,6 +1,6 @@
-# Frontend — Vigilant Response
+# Frontend — DRCC - Disaster Response Control Center
 
-This folder contains the frontend (Vite + React + TypeScript) for the Vigilant Response project.
+This folder contains the frontend (Vite + React + TypeScript) for the DRCC - Disaster Response Control Center project.
 
 ## Prerequisites
 - Node.js (recommended: 16+ / 18+)

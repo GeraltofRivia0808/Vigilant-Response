@@ -1,6 +1,6 @@
-# Vigilant Response
+# DRCC - Disaster Response Control Center
 
-Vigilant Response is a split frontend/backend project for disaster response workflows.
+DRCC - Disaster Response Control Center is a split frontend/backend project for disaster response workflows.
 
 ## Creators
 
@@ -9,7 +9,7 @@ Vigilant Response is a split frontend/backend project for disaster response work
 
 ## Project Details
 
-Vigilant Response is designed to support operational awareness and coordination during emergency events. The project combines a responsive web interface with a MySQL-backed API so teams can monitor disaster events, review active alerts, track resource availability, and manage volunteer status in one system.
+DRCC - Disaster Response Control Center is designed to support operational awareness and coordination during emergency events. The project combines a responsive web interface with a MySQL-backed API so teams can monitor disaster events, review active alerts, track resource availability, and manage volunteer status in one system.
 
 Core goals:
 

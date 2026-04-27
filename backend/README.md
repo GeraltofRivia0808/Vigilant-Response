@@ -1,6 +1,6 @@
 # Backend Setup Guide
 
-This folder documents the backend service used by Vigilant Response. The backend currently runs from the repository root through `server.js`, but this guide collects the MySQL and API setup in one place for local development.
+This folder documents the backend service used by DRCC - Disaster Response Control Center. The backend currently runs from the repository root through `server.js`, but this guide collects the MySQL and API setup in one place for local development.
 
 ## Creators
 
@@ -9,7 +9,7 @@ This folder documents the backend service used by Vigilant Response. The backend
 
 ## Backend Project Details
 
-The Vigilant Response backend provides the data layer and operational API for disaster response workflows. It serves read endpoints for dashboard visibility and write endpoints for action-taking operations such as resource consumption and volunteer assignment status updates.
+The DRCC - Disaster Response Control Center backend provides the data layer and operational API for disaster response workflows. It serves read endpoints for dashboard visibility and write endpoints for action-taking operations such as resource consumption and volunteer assignment status updates.
 
 Backend responsibilities:
 
