@@ -1,14 +1,21 @@
-# Vigilant Response (monorepo)
+# Vigilant Response
 
-This repository contains the frontend and (optionally) backend for the Vigilant Response project.
+Vigilant Response is a split frontend/backend project for disaster response workflows.
 
-Repository layout
-- `frontend/` — Vite + React + TypeScript frontend (current contents).
-- `backend/` — (optional) backend service (Node/Express, Python, etc.).
-- `.github/workflows/` — CI workflows for build/test.
+## Repository Layout
 
-Quick start (frontend)
-1. Open a terminal at the repo root and run:
+- `frontend/` contains the Vite + React + TypeScript app.
+- `backend/` contains backend setup notes and database guidance.
+- `server.js`, `db.js`, and `routes/` are the backend implementation currently used by the app.
+- `.github/workflows/` contains CI workflows.
+
+## Prerequisites
+
+- Node.js 18 or newer
+- MySQL 8 or compatible
+- MySQL CLI access
+
+## Frontend Setup
 
 ```bash
 cd frontend
@@ -16,58 +23,50 @@ npm install
 npm run dev
 ```
 
-2. Open the dev server (Vite default): http://localhost:5173
-
-Running the backend (if present)
-1. Open the `backend/` folder in another terminal and follow its README or run:
-
-```bash
-cd backend
-npm install
-npm run dev
-```
-
-Run both locally
-- Use two terminals (one for `frontend`, one for `backend`). To run both with a single command, consider using `concurrently` or a root workspace script.
-
-CI (GitHub Actions)
-- The repo has a workflow at `.github/workflows/ci.yml` that:
-  - builds the frontend (`frontend/`), runs its tests if present
-  - attempts to build/test the backend only if `backend/package.json` exists
-
-Add a backend
-- Create a `backend/` folder and add your backend code there. The CI will pick it up automatically.
-
-Notes
-- This repo is intentionally split so frontend and backend can have independent lifecycles.
-- If you prefer a workspace-based setup (`npm workspaces` / `pnpm`), I can add a root `package.json` and workspace config.
-# Vigilant Response
+The frontend runs on the Vite default port, usually http://localhost:5173.
 
 ## Backend Setup
 
-1. Create a `.env` file in the project root using `.env.example` as reference.
-2. Set your MySQL credentials in `.env`:
+Create a `.env` file in the repository root using `.env.example` as the reference:
 
 ```env
 DB_HOST=localhost
 DB_PORT=3306
 DB_USER=root
-DB_PASSWORD=your_mysql_password
+DB_PASSWORD=your_mysql_password_here
 DB_NAME=DisasterAlertSystem
 ```
 
-3. Start the backend:
+Then install dependencies from the repository root and start the backend:
 
 ```bash
+npm install
 npm run server
 ```
 
-If credentials are incorrect, the server now exits with a clear error and prints the connection parameters it attempted.
+The backend listens on http://localhost:3000.
 
-## Frontend
+## Database Setup
 
-Run the Vite app:
+Detailed MySQL CLI steps live in [backend/README.md](backend/README.md). In short, create the `DisasterAlertSystem` database, then create the tables used by the API: `Region`, `Disaster_Event`, `Alert`, `Shelter`, `Resource`, `Volunteer`, and `Volunteer_Skills`, plus the supporting tables referenced by the debug routes.
 
-```bash
-npm run dev
-```
+## API Summary
+
+- `GET /api/disasters` returns disaster events from `Disaster_Event`.
+- `GET /api/alerts` returns alert rows.
+- `GET /api/resources` returns grouped resource totals joined with shelter data.
+- `POST /api/resources/update` reduces resource quantity for a shelter and type.
+- `GET /api/volunteers` returns volunteers and their skills.
+- `POST /api/volunteers/update-status` updates volunteer availability.
+- `GET /api/debug/*` exposes raw table snapshots for troubleshooting.
+
+## Troubleshooting
+
+- If MySQL connection fails, verify the values in `.env`.
+- If a table is missing, run the schema in [backend/README.md](backend/README.md).
+- If the frontend cannot reach the backend, confirm the backend is running on port 3000.
+
+## Notes
+
+- The backend uses environment variables and does not require hard-coded credentials.
+- The repository is structured so the frontend and backend can be run independently.
